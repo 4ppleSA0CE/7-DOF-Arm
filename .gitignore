@@ -1,0 +1,26 @@
+# colcon / ament
+build/
+install/
+log/
+
+# CMake
+cmake-build*/
+CMakeCache.txt
+CMakeFiles/
+
+# editor
+.vscode/
+.idea/
+*.swp
+
+# python
+__pycache__/
+*.pyc
+
+
+# benchmark artifacts
+docs/*.json
+/tmp/
+
+# mujoco host render log
+MUJOCO_LOG.TXT
