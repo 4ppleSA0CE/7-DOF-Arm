@@ -3,6 +3,7 @@
 #include <gtest/gtest.h>
 
 #include <random>
+#include <vector>
 
 #include "libkinematics/fk.hpp"
 #include "libkinematics/robot.hpp"
@@ -40,6 +41,27 @@ Eigen::Matrix<double, 6, Eigen::Dynamic> numericalBodyJacobian(const ForwardKine
   }
   return J;
 }
+
+// Ad_T for [omega; v] ordering, built by hand from R and p.
+//
+// Deliberately does NOT call SE3::Adjoint(). space_jacobian is *implemented* as
+// `body_pose(q).Adjoint() * body_jacobian(...)`, so comparing it against that same
+// expression restates the implementation character-for-character and passes even if
+// Adjoint() were the inverse adjoint -- both sides would move together. An
+// independent construction is the only thing that actually pins the function.
+klib::Matrix6d adjointByHand(const SE3& T) {
+  const Eigen::Matrix3d R = T.rotation().matrix();
+  const Eigen::Vector3d p = T.translation();
+  Eigen::Matrix3d px;
+  px << 0.0, -p.z(), p.y(),
+        p.z(), 0.0, -p.x(),
+        -p.y(), p.x(), 0.0;
+  klib::Matrix6d Ad = klib::Matrix6d::Zero();
+  Ad.topLeftCorner<3, 3>() = R;
+  Ad.bottomLeftCorner<3, 3>() = px * R;
+  Ad.bottomRightCorner<3, 3>() = R;
+  return Ad;
+}
 }  // namespace
 
 TEST(Jacobian, AnalyticMatchesNumerical) {
@@ -55,17 +77,31 @@ TEST(Jacobian, AnalyticMatchesNumerical) {
   EXPECT_LT(max_err, 1e-5) << "max body-Jacobian error vs 5-point diff: " << max_err;
 }
 
-TEST(Jacobian, SpaceEqualsAdjointTimesBody) {
+// The space Jacobian, built independently from the left-accumulated screw form:
+// the space screws are S_i = Ad_M B_i, and column i is S_i pushed forward by the
+// product of the PRECEDING joint exponentials,
+//   J_s col i = Ad_{exp([S_1]q_1) ... exp([S_{i-1}]q_{i-1})} S_i.
+// This shares no code path with space_jacobian's own Ad_T J_b implementation.
+TEST(Jacobian, SpaceJacobianMatchesLeftAccumulatedScrewForm) {
   Robot robot = klib::load_robot_yaml(KINOVA_SCREWS_YAML);
-  ForwardKinematics fk(robot);
+  const int n = robot.dof();
+  std::vector<klib::Twist> S(n);
+  const klib::Matrix6d AdM = adjointByHand(robot.home_pose_M);
+  for (int i = 0; i < n; ++i) S[i] = AdM * robot.body_screw_axes[i];
+
+  double max_err = 0.0;
   for (int t = 0; t < 100; ++t) {
-    Eigen::VectorXd q = randQ(robot.dof());
-    // Concrete types, not auto: the product is a lazy Eigen expression whose
-    // temporary operands would dangle.
+    Eigen::VectorXd q = randQ(n);
+    klib::Jacobian expected(6, n);
+    SE3 T;  // identity
+    for (int i = 0; i < n; ++i) {
+      expected.col(i) = adjointByHand(T) * S[i];
+      T = T * SE3::exp(S[i] * q(i));
+    }
     klib::Jacobian Js = klib::space_jacobian(robot, q);
-    klib::Jacobian expected = fk.body_pose(q).Adjoint() * body_jacobian(robot, q);
-    EXPECT_TRUE(Js.isApprox(expected, 1e-10));
+    max_err = std::max(max_err, (Js - expected).cwiseAbs().maxCoeff());
   }
+  EXPECT_LT(max_err, 1e-9) << "max space-Jacobian error vs screw form: " << max_err;
 }
 
 TEST(Jacobian, ManipulabilityMatchesDefinitionAndNonneg) {
