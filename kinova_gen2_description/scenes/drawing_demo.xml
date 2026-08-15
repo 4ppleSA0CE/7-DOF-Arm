@@ -1,0 +1,33 @@
+<!-- Standalone MuJoCo demo scene: real Kinova + table + a workspace obstacle
+     the elbow must steer around while the tool traces a path. Bigger offscreen
+     framebuffer for clean mp4 recording. -->
+<mujoco model="drawing_demo">
+  <include file="../mjcf/kinova_gen2.xml"/>
+
+  <visual>
+    <global offwidth="1280" offheight="720"/>
+    <headlight diffuse="0.6 0.6 0.6" ambient="0.3 0.3 0.3"/>
+  </visual>
+  <statistic center="0.3 0 0.4" extent="1.2"/>
+
+  <worldbody>
+    <light name="top" pos="0.3 0 1.6" dir="0 0 -1" diffuse="0.9 0.9 0.9"/>
+
+    <!-- table under the drawing area -->
+    <body name="table" pos="0.45 0 0.18">
+      <geom name="table_top" type="box" size="0.3 0.45 0.02" pos="0 0 0.0" rgba="0.55 0.4 0.25 1"/>
+    </body>
+
+    <!-- moving red obstacle (driven via mocap); the elbow ducks around it -->
+    <body name="obstacle" mocap="true" pos="0.40 0.20 0.40">
+      <geom name="obstacle_geom" type="sphere" size="0.06" rgba="0.85 0.15 0.15 1" contype="0" conaffinity="0"/>
+    </body>
+
+    <!-- marker showing the commanded tool target (set via mocap each step) -->
+    <body name="target_marker" mocap="true" pos="0.4 0 0.45">
+      <geom type="sphere" size="0.015" rgba="0.1 0.8 0.2 0.6" contype="0" conaffinity="0"/>
+    </body>
+
+    <camera name="demo_cam" pos="1.1 -0.9 0.95" xyaxes="0.6 0.8 0 -0.35 0.26 0.9"/>
+  </worldbody>
+</mujoco>

@@ -1,0 +1,104 @@
+<mujoco model="j2s7s300">
+  <compiler angle="radian" meshdir="../meshes/kinova" />
+  <option timestep="0.001" integrator="implicitfast" />
+  <default>
+    <joint armature="0.1" damping="0.5" frictionloss="0.1" />
+    <motor ctrlrange="-50 50" />
+  </default>
+
+  <asset>
+    <mesh name="base" content_type="model/stl" file="base.STL" />
+    <mesh name="shoulder" content_type="model/stl" file="shoulder.STL" />
+    <mesh name="ring_big" content_type="model/stl" file="ring_big.STL" />
+    <mesh name="arm_half_1" content_type="model/stl" file="arm_half_1.STL" />
+    <mesh name="arm_half_2" content_type="model/stl" file="arm_half_2.STL" />
+    <mesh name="forearm" content_type="model/stl" file="forearm.STL" />
+    <mesh name="wrist_spherical_1" content_type="model/stl" file="wrist_spherical_1.STL" />
+    <mesh name="ring_small" content_type="model/stl" file="ring_small.STL" />
+    <mesh name="wrist_spherical_2" content_type="model/stl" file="wrist_spherical_2.STL" />
+    <mesh name="hand_3finger" content_type="model/stl" file="hand_3finger.STL" />
+    <mesh name="finger_proximal" content_type="model/stl" file="finger_proximal.STL" />
+    <mesh name="finger_distal" content_type="model/stl" file="finger_distal.STL" />
+  </asset>
+
+  <worldbody>
+    <light pos="0 0 2.5" dir="0 0 -1" diffuse="0.8 0.8 0.8" />
+    <geom name="ground" type="plane" size="2 2 0.1" rgba="0.3 0.3 0.35 1" />
+    <body name="root">
+      <body name="link_base">
+        <inertial pos="0 0 0.1255" mass="0.46784" diaginertia="0.000951271 0.000951271 0.000374272" />
+        <geom type="mesh" contype="0" conaffinity="0" group="1" density="0" rgba="0.792157 0.819608 0.933333 1" mesh="base" />
+        <geom type="mesh" rgba="0.792157 0.819608 0.933333 1" mesh="base" />
+        <body name="link_1" pos="0 0 0.15675" quat="0 0 1 0">
+          <inertial pos="0 -0.002 -0.0605" mass="0.7477" diaginertia="0.00152032 0.00152032 0.00059816" />
+          <joint name="joint_1" pos="0 0 0" axis="0 0 1" actuatorfrcrange="-40 40" />
+          <geom type="mesh" contype="0" conaffinity="0" group="1" density="0" rgba="0.792157 0.819608 0.933333 1" mesh="shoulder" />
+          <geom type="mesh" contype="0" conaffinity="0" group="1" density="0" rgba="0.792157 0.819608 0.933333 1" mesh="ring_big" />
+          <geom type="mesh" rgba="0.792157 0.819608 0.933333 1" mesh="shoulder" />
+          <body name="link_2" pos="0 0.0016 -0.11875" quat="0 0 -0.707107 0.707107">
+            <inertial pos="0 -0.103563 0" quat="0.707107 0.707107 0 0" mass="0.8447" diaginertia="0.00247074 0.00247074 0.000380115" />
+            <joint name="joint_2" pos="0 0 0" axis="0 0 1" range="0.820305 5.46288" actuatorfrcrange="-80 80" />
+            <geom type="mesh" contype="0" conaffinity="0" group="1" density="0" rgba="0.792157 0.819608 0.933333 1" mesh="arm_half_1" />
+            <geom type="mesh" contype="0" conaffinity="0" group="1" density="0" rgba="0.792157 0.819608 0.933333 1" mesh="ring_big" />
+            <geom type="mesh" rgba="0.792157 0.819608 0.933333 1" mesh="arm_half_1" />
+            <body name="link_3" pos="0 -0.205 0" quat="0.707107 -0.707107 0 0">
+              <inertial pos="0 0 -0.102245" mass="0.8447" diaginertia="0.00247074 0.00247074 0.000380115" />
+              <joint name="joint_3" pos="0 0 0" axis="0 0 1" actuatorfrcrange="-40 40" />
+              <geom type="mesh" contype="0" conaffinity="0" group="1" density="0" rgba="0.792157 0.819608 0.933333 1" mesh="arm_half_2" />
+              <geom type="mesh" contype="0" conaffinity="0" group="1" density="0" rgba="0.792157 0.819608 0.933333 1" mesh="ring_big" />
+              <geom type="mesh" rgba="0.792157 0.819608 0.933333 1" mesh="arm_half_2" />
+              <body name="link_4" pos="0 0 -0.205" quat="0 0 0.707107 0.707107">
+                <inertial pos="0 0.081 -0.0086" quat="0.707107 0.707107 0 0" mass="0.6763" diaginertia="0.00142022 0.00142022 0.000304335" />
+                <joint name="joint_4" pos="0 0 0" axis="0 0 1" range="0.523599 5.75959" actuatorfrcrange="-40 40" />
+                <geom type="mesh" contype="0" conaffinity="0" group="1" density="0" rgba="0.792157 0.819608 0.933333 1" mesh="forearm" />
+                <geom type="mesh" contype="0" conaffinity="0" group="1" density="0" rgba="0.792157 0.819608 0.933333 1" mesh="ring_big" />
+                <geom type="mesh" rgba="0.792157 0.819608 0.933333 1" mesh="forearm" />
+                <body name="link_5" pos="0 0.2073 -0.0114" quat="0 0 -0.707107 0.707107">
+                  <inertial pos="0 0.00288489 -0.0541933" mass="0.463" diaginertia="0.000432132 0.000432132 9.26e-05" />
+                  <joint name="joint_5" pos="0 0 0" axis="0 0 1" actuatorfrcrange="-20 20" />
+                  <geom type="mesh" contype="0" conaffinity="0" group="1" density="0" rgba="0.792157 0.819608 0.933333 1" mesh="wrist_spherical_1" />
+                  <geom type="mesh" contype="0" conaffinity="0" group="1" density="0" rgba="0.792157 0.819608 0.933333 1" mesh="ring_small" />
+                  <geom type="mesh" rgba="0.792157 0.819608 0.933333 1" mesh="wrist_spherical_1" />
+                  <body name="link_6" pos="0 0 -0.10375" quat="0 0 0.707107 0.707107">
+                    <inertial pos="0 0.0497209 -0.00285628" quat="0.707107 0.707107 0 0" mass="0.463" diaginertia="0.000432132 0.000432132 9.26e-05" />
+                    <joint name="joint_6" pos="0 0 0" axis="0 0 1" range="1.13446 5.14872" actuatorfrcrange="-20 20" />
+                    <geom type="mesh" contype="0" conaffinity="0" group="1" density="0" rgba="0.792157 0.819608 0.933333 1" mesh="wrist_spherical_2" />
+                    <geom type="mesh" contype="0" conaffinity="0" group="1" density="0" rgba="0.792157 0.819608 0.933333 1" mesh="ring_small" />
+                    <geom type="mesh" rgba="0.792157 0.819608 0.933333 1" mesh="wrist_spherical_2" />
+                    <body name="link_7" pos="0 0.10375 0" quat="0 0 -0.707107 0.707107">
+                      <inertial pos="0 0 -0.06" quat="0.5 0.5 -0.5 0.5" mass="0.99" diaginertia="0.0005816 0.000345324 0.000345324" />
+                      <joint name="joint_7" pos="0 0 0" axis="0 0 1" actuatorfrcrange="-20 20" />
+                      <geom type="mesh" contype="0" conaffinity="0" group="1" density="0" rgba="0.792157 0.819608 0.933333 1" mesh="hand_3finger" />
+                      <geom type="mesh" contype="0" conaffinity="0" group="1" density="0" rgba="0.792157 0.819608 0.933333 1" mesh="ring_small" />
+                      <geom type="mesh" rgba="0.792157 0.819608 0.933333 1" mesh="hand_3finger" />
+                      <body name="end_effector" pos="0 0 -0.16" quat="0 0.707107 0.707107 0">
+                        <site name="tool0" pos="0 0 0" size="0.01" />
+                      </body>
+                      </body>
+                  </body>
+                </body>
+              </body>
+            </body>
+          </body>
+        </body>
+      </body>
+    </body>
+  </worldbody>
+  <!-- link_base is welded to the world, so MuJoCo's filterparent does NOT exclude
+       its cosmetic base-ring mesh from colliding with link_1's shoulder mesh. Those
+       two meshes overlap at the base at every joint_1 angle, so the resulting
+       contacts pin the base yaw (joint_1 can't rotate). Exclude the pair. -->
+  <contact>
+    <exclude body1="link_base" body2="link_1" />
+  </contact>
+
+  <actuator>
+    <motor name="m1" joint="joint_1" />
+    <motor name="m2" joint="joint_2" />
+    <motor name="m3" joint="joint_3" />
+    <motor name="m4" joint="joint_4" />
+    <motor name="m5" joint="joint_5" />
+    <motor name="m6" joint="joint_6" />
+    <motor name="m7" joint="joint_7" />
+  </actuator>
+</mujoco>
