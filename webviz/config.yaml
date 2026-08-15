@@ -1,0 +1,75 @@
+# webviz sim server + motion controller tuning.
+#
+# Loaded at startup; nothing here needs a rebuild. Every key is optional -- what
+# you leave out keeps the built-in default (see webviz/server/config.hpp).
+#
+# Search order:
+#   1. the path given as the first argument to sim_server
+#   2. $WEBVIZ_CONFIG
+#   3. this file (its absolute path is baked in at build time)
+#   4. ./config.yaml in the working directory
+
+server:
+  # 8765 is Foxglove's default WebSocket port, so the sim server stays clear of it.
+  # If you change this, point the browser at the new one too, either by setting
+  # VITE_WS_URL when you start Vite or by editing webviz/app/.env.
+  port: 8770
+
+motion:
+  # Per-joint kinematic limits. The trajectory generator enforces all three by
+  # construction -- the arm physically cannot exceed them, which is what makes it
+  # move like an industrial machine rather than snapping to setpoints.
+  # Roughly the real Kinova j2s7s300: ~36 deg/s on the major joints, ~48 on the wrist.
+  # Each accepts either 7 values or one scalar applied to every joint.
+  joint_vel_max: [0.60, 0.60, 0.60, 0.60, 0.80, 0.80, 0.80] # rad/s
+  joint_acc_max: [1.20, 1.20, 1.20, 1.20, 1.60, 1.60, 1.60] # rad/s^2
+  joint_jerk_max: [6.0, 6.0, 6.0, 6.0, 8.0, 8.0, 8.0] # rad/s^3
+
+  # Global speed override, like a teach-pendant percentage knob. (0, 1].
+  # Drop to 0.25 to watch the motion in detail; the limits above scale with it.
+  # Changing it live (the dashboard slider) applies to the NEXT planned move --
+  # rescaling a profile that is already running would step its velocity.
+  speed_scale: 1.0
+
+control:
+  # Computed-torque tracking: the joint error obeys e'' + Kd e' + Kp e = 0, so the
+  # response is set by a bandwidth and a damping ratio instead of seven hand-tuned
+  # gains. Kp = bandwidth^2, Kd = 2 * damping_ratio * bandwidth.
+  bandwidth: 14.0 # rad/s -- higher tracks tighter, too high chatters
+  damping_ratio: 1.0 # 1.0 = critically damped, i.e. no overshoot. Never go below ~0.9.
+  ki: 30.0 # integral gain; kills the steady-state droop from Coulomb friction
+  integral_clamp: 0.30 # anti-windup bound (rad*s)
+  friction_ff: 0.9 # fraction of the plant's Coulomb friction fed forward
+  armature: 0.1 # must match <joint armature> in the MJCF
+
+ik:
+  # Solved once per goal change (not per control step), so it can afford to be
+  # tight. The base-face term turns joint_1 toward the target in the position
+  # task's null space, so the arm faces what it reaches for.
+  tol: 0.0005 # m
+  max_iters: 300
+  damping: 0.001 # damped-least-squares lambda
+  base_face_gain: 0.6
+  # Within this horizontal radius of the base axis the target azimuth is
+  # ill-conditioned (atan2 of two near-zero numbers), so the base yaw is held instead.
+  base_face_min_radius: 0.10
+
+obstacle:
+  # Avoidance is resolved inside the IK null space, so the arm PLANS a posture that
+  # clears the obstacle rather than being shoved off course by a reactive force.
+  enabled: true
+  # Keep-out radius around the obstacle CENTRE (m). The arm's own link bounding
+  # sphere (0.06 m) is added to this in the clearance test, so a link centre is held
+  # 0.18 m out. Note the obstacle geom in the MJCF is only 0.06 m: the extra margin
+  # is deliberate, and the dashboard draws it so the arm does not look like it is
+  # dodging empty space.
+  radius: 0.12
+  influence: 0.18 # clearance below which the arm starts steering around it (m)
+  gain: 0.8
+
+stall:
+  # If the planned motion has finished but the arm is physically stuck (pressing
+  # into the table, or against a joint limit), it gives up and holds instead of
+  # leaning on the actuators indefinitely.
+  err: 0.03 # joint error that counts as "not tracking" (rad)
+  time: 1.0 # how long that must persist before giving up (s)
