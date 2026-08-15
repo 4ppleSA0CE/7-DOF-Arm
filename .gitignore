@@ -24,3 +24,9 @@ docs/*.json
 
 # mujoco host render log
 MUJOCO_LOG.TXT
+
+# macOS
+.DS_Store
+
+# editor extensions
+*.vsix
