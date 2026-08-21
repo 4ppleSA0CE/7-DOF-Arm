@@ -7,8 +7,7 @@ Redundancy-Resolving Motion Control for a 7-DOF Manipulator, written from scratc
 Every derivation behind this repo lives in one document: rotation groups, screws
 and the product of exponentials, body and space Jacobians, damped least squares,
 the null-space projector, recursive Newton-Euler dynamics, jerk-limited
-trajectory parameterisation, and computed-torque control. It is written to be
-read start to finish, not skimmed as reference.
+trajectory parameterisation, and computed-torque control.
 
 **[THEORY.md](THEORY.md)**
 
