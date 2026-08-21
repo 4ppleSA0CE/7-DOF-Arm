@@ -1,13 +1,21 @@
 # SevenDOF
 
-Redundancy-Resolving Motion Control for a 7-DOF Manipulator, written from scratch in C++17
+Motion control with redundancy resolution for a 7-DOF manipulator, implemented
+from first principles in C++17
 
-## ‼️ Read THEORY.md ‼️
+## Read THEORY.md first
 
-Every derivation behind this repo lives in one document: rotation groups, screws
-and the product of exponentials, body and space Jacobians, damped least squares,
-the null-space projector, recursive Newton-Euler dynamics, jerk-limited
-trajectory parameterisation, and computed-torque control.
+One document holds all the derivations for this repository. The document covers
+these topics:
+
+- rotation groups
+- screws and the product of exponentials
+- body and space Jacobians
+- damped least squares
+- the null-space projector
+- recursive Newton-Euler dynamics
+- the parameterisation of jerk-limited trajectories
+- computed-torque control
 
 **[THEORY.md](THEORY.md)**
 
@@ -15,35 +23,43 @@ trajectory parameterisation, and computed-torque control.
 
 ## About
 
-A 6-DOF arm has exactly enough joints to reach a pose. Solve the inverse
-kinematics and you get an answer.
+A 6-DOF arm has six joints, and a pose has six dimensions. A solution of the
+inverse kinematics gives an answer.
 
-A 7-DOF arm has one joint too many, so it has an infinite family of answers. The
-extra freedom buys you something real: the arm can hold the tool exactly on
-target *while* moving its elbow out of the way of an obstacle, away from a
-singularity, or off a joint limit. Picking which answer to use is called
-redundancy resolution, and it is what this project is about.
+A 7-DOF arm has one more joint than the task needs. Thus it has an infinite
+family of answers. This extra freedom is useful. The arm can hold the tool
+exactly on the target and move its elbow at the same time. The elbow can move
+away from an obstacle, away from a singularity, or away from a joint limit.
 
-The maths is written by hand from the Lie-group formulation (Lynch & Park,
-*Modern Robotics*). Nothing comes from KDL, Pinocchio, or MoveIt. **MuJoCo is the
-physics plant only.** It integrates contact and rigid-body dynamics and serves as
-an independent oracle to check the maths against, but every model quantity the
-controller consumes comes out of `libkinematics/` in this repo.
+The choice of which answer to use is called redundancy resolution. Redundancy
+resolution is the subject of this project.
+
+This repository implements the maths from the Lie-group formulation of Lynch and
+Park, *Modern Robotics*. The code does not use KDL, Pinocchio, or MoveIt.
+
+**MuJoCo is the physics plant only.** It integrates the contact dynamics and the
+rigid-body dynamics. It is also an independent oracle for checks of the maths.
+But each model quantity that the controller uses comes from `libkinematics/` in
+this repository.
 
 ## Summary
 
-A move happens in four stages:
+A move occurs in four stages:
 
-1. **Goal.** Dragging the target in the browser sends a new position. Only a
-   moved target or obstacle triggers a replan, never the control loop itself.
-2. **Solve.** One damped-least-squares IK solve, with the redundancy resolved in
-   the null space. Both the candidate posture and the joint-space path to it are
-   collision-checked against MuJoCo's real meshes.
-3. **Plan.** A synchronised, jerk-limited profile over a single path parameter.
-   Per-joint velocity, acceleration and jerk limits are mapped onto that
-   parameter before motion begins, so no joint can exceed its cap.
+1. **Goal.** A drag of the target in the browser sends a new position. Only a
+   moved target or a moved obstacle triggers a replan. The control loop itself
+   never triggers a replan.
+2. **Solve.** The controller does one IK solve with damped least squares. It
+   resolves the redundancy in the null space. It checks the candidate posture
+   and the joint-space path to that posture for collisions against the real
+   meshes in MuJoCo.
+3. **Plan.** The controller builds a synchronised, jerk-limited profile over a
+   single path parameter. Before the motion starts, it maps the per-joint limits
+   for velocity, acceleration and jerk onto that parameter. Thus no joint can
+   exceed its limit.
 4. **Track.** Computed torque with full feedforward drives the arm along the
-   trajectory to a complete stop, at 50 Hz against a MuJoCo plant.
+   trajectory to a complete stop. This stage runs at 50 Hz against a MuJoCo
+   plant.
 
 ## System diagrams
 
@@ -62,9 +78,9 @@ flowchart LR
     MJ -->|"state @ 50 Hz"| B
 ```
 
-### Library layering
+### Library layers
 
-Each layer is unit-tested before the next is stacked on it.
+Each layer passes its unit tests before the next layer builds on it.
 
 ```mermaid
 flowchart BT
@@ -81,30 +97,38 @@ flowchart BT
 
 ## Technical details
 
-My project to teach myself rigid-body robotics by implementing all of it rather
-than calling a library.
+This project implements rigid-body robotics from first principles instead of
+from a library.
 
-- Implemented the full kinematics and dynamics stack for a 7-DOF redundant
-  manipulator in C++17 and Eigen: SO(3)/SE(3) Lie groups, product-of-exponentials
-  forward kinematics, body and space Jacobians, damped-least-squares inverse
-  kinematics, null-space redundancy resolution, and recursive Newton-Euler
-  inverse dynamics
-- Verified every quantity against MuJoCo as an independent oracle over 1000
-  random configurations, agreeing to **1.3 × 10⁻¹⁴** on forward kinematics and
-  **1.5 × 10⁻¹³ N·m** on inverse dynamics
-- Built a plan-then-track motion controller (one IK solve, a synchronised
-  jerk-limited trajectory, computed-torque tracking) that holds every per-joint
-  velocity, acceleration and jerk limit by construction, with zero actuator
-  saturation and zero tip-velocity reversals across 14 test scenarios
-- Resolved redundancy inside the IK using an annealed null-space projection of
-  four secondary objectives (base facing, obstacle clearance, static-scenery
-  clearance, joint-limit centering), with collision checking of the swept
-  joint-space path rather than only its endpoints
-- Cut worst-case replan latency from 40.7 ms to **10.5 ms** against a 20 ms
-  realtime budget by adding fixed-point and stagnation termination to the IK
-  descent, measured over a 324-target workspace sweep
-- Built a browser dashboard (React, TypeScript, three.js, MUI) streaming state
-  over a WebSocket at 50 Hz, with draggable 3D target and obstacle markers
+- The project implements the full kinematics and dynamics stack for a 7-DOF
+  redundant manipulator in C++17 and Eigen. The stack contains:
+  - SO(3) and SE(3) Lie groups
+  - forward kinematics by the product of exponentials
+  - body and space Jacobians
+  - inverse kinematics by damped least squares
+  - redundancy resolution in the null space
+  - inverse dynamics by recursive Newton-Euler
+- Tests verify each quantity against MuJoCo as an independent oracle over 1000
+  random configurations. The forward kinematics agrees with MuJoCo to
+  **1.3 × 10⁻¹⁴**. The inverse dynamics agrees to **1.5 × 10⁻¹³ N·m**.
+- The motion controller first plans a move and then tracks it. It does one IK
+  solve, builds a synchronised jerk-limited trajectory, and tracks it with
+  computed torque. By construction, it holds each per-joint limit for velocity,
+  acceleration and jerk. Across 14 test scenarios, it shows zero actuator
+  saturation and zero tip-velocity reversals.
+- The IK resolves the redundancy with an annealed null-space projection of four
+  secondary objectives. The collision check covers the swept joint-space path,
+  not only its endpoints. The four objectives are:
+  - base facing
+  - obstacle clearance
+  - static-scenery clearance
+  - joint-limit centering
+- Fixed-point termination and stagnation termination in the IK descent cut the
+  worst-case replan latency from 40.7 ms to **10.5 ms**. The realtime budget is
+  20 ms. The measurement covers a 324-target workspace sweep.
+- A browser dashboard receives the state over a WebSocket at 50 Hz. The
+  dashboard uses React, TypeScript, three.js and MUI. It has draggable 3D
+  markers for the target and the obstacle.
 
 ## Architecture
 
@@ -126,18 +150,20 @@ than calling a library.
 
 ## Features
 
-- **Drag-to-retarget:** move the green sphere anywhere in the workspace and the
-  arm plans a fresh move and executes it to a complete stop
-- **Obstacle avoidance in the null space:** the arm *plans* a posture that clears
-  the red sphere rather than being shoved off course by a reactive force
-- **Redundancy demo:** toggle it on and the elbow sweeps its self-motion manifold
-  while the tool stays pinned on the target
-- **Teach-pendant speed override:** at 25% every planned move runs at a quarter
-  speed, limits and all
-- **Continuous joints handled properly:** joints 1/3/5/7 have no mechanical stop,
-  so displacements are measured on the circle and moves take the short way round
-- **Everything tunable at startup:** one YAML file for limits, gains, IK settings
-  and alerting thresholds, validated on load
+- **Drag-to-retarget:** Move the green sphere to any point in the workspace. The
+  arm then plans a new move and executes it to a complete stop.
+- **Obstacle avoidance in the null space:** The arm plans a posture that clears
+  the red sphere. It does not use a reactive force that deflects the arm from
+  its path.
+- **Redundancy demo:** Switch the demo on. The elbow then sweeps its self-motion
+  manifold, and the tool stays on the target.
+- **Teach-pendant speed override:** At 25%, each planned move runs at a quarter
+  of its speed. The limits scale by the same factor.
+- **Correct treatment of continuous joints:** Joints 1, 3, 5 and 7 have no
+  mechanical stop. Thus the controller measures displacements on the circle, and
+  each move goes in the shorter direction.
+- **All tunable values at startup:** One YAML file holds the limits, the gains, the IK
+  settings and the alert thresholds. The server validates the file at startup.
 
 ## Tech stack
 
@@ -178,8 +204,9 @@ SevenDOF/
 
 ### Correctness
 
-Against MuJoCo computing the same quantities by unrelated algorithms, over 1000
-random configurations (50 for the mass matrix):
+The table shows the worst error against MuJoCo. MuJoCo computes the same
+quantities by unrelated algorithms. The comparison covers 1000 random
+configurations, and 50 configurations for the mass matrix.
 
 | Quantity | Worst error |
 |---|---|
@@ -190,10 +217,12 @@ random configurations (50 for the mass matrix):
 | Inverse dynamics `τ` | 1.5 × 10⁻¹³ N·m |
 | IK round trip | 99.6% success, 0.045 ms median |
 
-Quantities with no external oracle are pinned against an independent
-construction: the body Jacobian against a 5-point numerical derivative, the space
-Jacobian against the left-accumulated screw form, the Coriolis matrix against the
-Newton-Euler recursion.
+Some quantities have no external oracle. Tests check these quantities against an
+independent construction:
+
+- the body Jacobian against a 5-point numerical derivative
+- the space Jacobian against the left-accumulated screw form
+- the Coriolis matrix against the Newton-Euler recursion
 
 ### Motion quality
 
@@ -217,8 +246,8 @@ Newton-Euler recursion.
 
 ### Hot paths
 
-Apple M-series, `-O3`, configurations drawn from a pool built outside the timed
-loop:
+The timings are from an Apple M-series machine with `-O3`. The configurations
+come from a pool that the benchmark builds outside the timed loop.
 
 | Operation | Time |
 |---|---|
@@ -229,7 +258,7 @@ loop:
 | Inverse dynamics (RNE) | 990 ns |
 | Mass matrix | 7.2 µs |
 
-Sample output from the motion profiler (`diag_motion`):
+This is sample output from the motion profiler, `diag_motion`:
 
 ```
 target                       err_mm    vmax    amax    jmax  qd_max   sat%  over_mm   resid   rev
@@ -241,16 +270,18 @@ far-front  [0.65,0,0.45]        0.1    0.28     0.6     594    0.62    0.0      
 diag       [0.35,0.35,0.55]     0.0    0.42     0.9     364    0.62    0.0      0.3  0.0000     0
 ```
 
-`rev` is the count of tip-velocity direction reversals, the signature of an arm
-hunting around its target. Zero across every scenario.
+The `rev` column is the count of reversals of the tip-velocity direction. A
+reversal shows that the arm oscillates near its target. The count is zero in
+each scenario.
 
 ## Quick start
 
 ### Prerequisites
 
 - A C++17 compiler and CMake 3.16+
-- Eigen and yaml-cpp (`brew install eigen yaml-cpp`)
-- For the demo only: MuJoCo (`pip install mujoco`) and Node 18+
+- Eigen and yaml-cpp. To install them, run `brew install eigen yaml-cpp`.
+- For the demo only: MuJoCo and Node 18+. To install MuJoCo, run
+  `pip install mujoco`.
 
 ### Build and test the maths
 
@@ -262,8 +293,8 @@ cmake -S . -B build && cmake --build build
 ctest --test-dir build
 ```
 
-No ROS, no container, no workspace setup. GoogleTest is fetched automatically if
-it is not installed.
+The build does not need ROS, a container, or a workspace setup. If GoogleTest is
+not installed, the build downloads it automatically.
 
 ### Run the dashboard
 
@@ -272,7 +303,7 @@ it is not installed.
 ./scripts/run_webviz.sh            # then open http://localhost:5173
 ```
 
-### Other things to run
+### Other commands
 
 ```bash
 ./build/libkinematics/kin_report          # FK/IK/redundancy numbers in the terminal
@@ -283,29 +314,32 @@ ctest --test-dir webviz/server/build      # controller + reach tests
 
 ## The robot model
 
-**Kinova Gen2 `j2s7s300`**, the standard 7-DOF research arm.
+The robot is the **Kinova Gen2 `j2s7s300`**, the standard 7-DOF research arm.
 
-- 7 revolute joints, 6-dimensional task space, 1 redundant degree of freedom
-- Joints 1, 3, 5, 7 are continuous; 2, 4, 6 have mechanical stops
-- Described three ways that must agree: MJCF for the physics, screw axes for the
-  kinematics, link inertias for the dynamics
+- It has 7 revolute joints, a 6-dimensional task space, and 1 redundant degree
+  of freedom.
+- Joints 1, 3, 5 and 7 are continuous. Joints 2, 4 and 6 have mechanical stops.
+- Three descriptions of the robot must agree. The MJCF gives the physics, the
+  screw axes give the kinematics, and the link inertias give the dynamics.
 
-Rebuilding the screw parameters independently from the MJCF's body frames
-reproduces the YAML to 2.4 × 10⁻¹⁶ on the home position and 1.6 × 10⁻¹⁵ on all
-seven screw axes, which is what licenses using MuJoCo as an oracle everywhere
-else.
+An independent reconstruction of the screw parameters from the body frames of
+the MJCF reproduces the YAML. The agreement is 2.4 × 10⁻¹⁶ on the home position
+and 1.6 × 10⁻¹⁵ on all seven screw axes. This agreement justifies the use of
+MuJoCo as an oracle everywhere else.
 
 ## Scope
 
-- Obstacle avoidance projects gradients into the null space, which works along
-  the self-motion manifold and weakly perpendicular to it. Omnidirectional
-  clearance needs a task-priority QP, which is not implemented. See
+- Obstacle avoidance projects gradients into the null space. This projection
+  works along the self-motion manifold. It works weakly perpendicular to the
+  manifold. Omnidirectional clearance needs a task-priority QP. The project does
+  not implement a task-priority QP. See
   [THEORY.md §9](THEORY.md#9-redundancy-resolution-the-null-space).
-- The screw YAML declares ±π limits for joints 1/3/5/7, which are physically
-  continuous. The controller derives continuity from the plant, but
-  `libkinematics`' own IK still clamps, so `kin_report` can return a joint pinned
-  at exactly ±3.1416.
-- Cartesian acceleration is not bounded directly. Joint limits hold everywhere,
-  but a mid-flight retarget peaks at 4.5 m/s² of tip acceleration against under
-  1.3 for a steady reach.
-- One robot, one scene, simulation only. No hardware.
+- The screw YAML declares ±π limits for joints 1, 3, 5 and 7. These joints are
+  physically continuous. The controller derives the continuity from the plant.
+  But the IK in `libkinematics` still clamps. Thus `kin_report` can return a
+  joint at exactly ±3.1416.
+- The controller does not bound the Cartesian acceleration directly. The joint
+  limits hold everywhere. But a retarget during a move peaks at 4.5 m/s² of tip
+  acceleration. The peak for a steady reach is under 1.3 m/s².
+- The project has one robot, one scene, and simulation only. There is no
+  hardware support.
