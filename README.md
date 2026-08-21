@@ -2,13 +2,6 @@
 
 Redundancy-Resolving Motion Control for a 7-DOF Manipulator, written from scratch in C++17
 
-![C++17](https://img.shields.io/badge/C%2B%2B-17-00599C?logo=cplusplus&logoColor=white)
-![MuJoCo](https://img.shields.io/badge/plant-MuJoCo-000000)
-![Tests](https://img.shields.io/badge/tests-35%20passing-brightgreen)
-![Accuracy](https://img.shields.io/badge/FK%20vs%20MuJoCo-1.3e--14-blue)
-![Control](https://img.shields.io/badge/control%20loop-50%20Hz-orange)
-![Latency](https://img.shields.io/badge/worst%20replan-10.5ms-orange)
-
 ## ‼️ Read THEORY.md ‼️
 
 Every derivation behind this repo lives in one document: rotation groups, screws
